@@ -37,6 +37,8 @@ defmodule Describe do
     csv_data
     |> make_dataframe
     |> filter_non_numeric_variables
+    |> compute_statistics
+    |> format_output
   end
 
   def make_dataframe({col_number, headers, lines}) do
@@ -47,27 +49,52 @@ defmodule Describe do
           Enum.map(lines, fn line -> Enum.at(line, col) end)
         )
       end
-    
     {headers, dataframe}
   end
 
   def filter_non_numeric_variables({headers, dataframe}) do
-    Enum.filter headers,
+    numeric_variables_headers = Enum.filter headers,
       fn header -> 
         data = dataframe[header]
         (Enum.any? data, fn v -> v !== "" end) and
-        (Enum.all? data, fn v -> 
-          case v do
-            "" -> true
-            v2 -> case (Float.parse v2) do
-              {_, ""} -> true
-              _ -> false
-            end
-          end
-        end)
+        is_empty_or_float?(data)
       end
+
+    {numeric_variables_headers, dataframe}
   end
 
-  #Count Mean Std Min 25% 50% 75% Max
+  def is_empty_or_float?(list) do
+    Enum.all? list, fn v -> 
+      case v do
+        "" -> true
+        v2 -> case (Float.parse v2) do
+          {_, ""} -> true
+          _ -> false
+        end
+      end
+    end
+  end
 
+  def compute_statistics({headers, dataframe}) do
+    #Count Mean Std Min 25% 50% 75% Max
+    Enum.map headers, fn header -> 
+      data = Enum.map dataframe[header], fn v -> 
+        case Float.parse v do
+          {x, _} -> x
+          _ -> 0.0
+        end
+      end
+      [
+        {:name, header},
+        {:count, Enum.count(data)},
+        {:mean, Enum.sum(data) / Enum.count(data)}
+      ]
+    end
+
+  end
+
+  def format_output(input) do
+    # will use :io.format
+    input
+  end
 end
