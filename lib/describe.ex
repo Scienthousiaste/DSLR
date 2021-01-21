@@ -76,7 +76,6 @@ defmodule Describe do
   end
 
   def compute_statistics({headers, dataframe}) do
-    #Count Mean Std Min 25% 50% 75% Max
     Enum.map headers, fn header -> 
       data = Enum.map dataframe[header], fn v -> 
         case Float.parse v do
@@ -86,15 +85,32 @@ defmodule Describe do
       end
       [
         {:name, header},
-        {:count, Enum.count(data)},
-        {:mean, Enum.sum(data) / Enum.count(data)}
+        {:count, Statistics.count data},
+        {:mean, Statistics.mean data},
+        {:std, Statistics.std data},
+        {:min, Statistics.min data},
+        {:"25%", Statistics.percentile(data, 0.25)},
+        {:"50%", Statistics.median data},
+        {:"75%", Statistics.percentile(data, 0.75)},
+        {:max, Statistics.max data},
       ]
     end
 
   end
 
   def format_output(input) do
-    # will use :io.format
-    input
+    # N'afficher que de quoi remplir la largeur du terminal, and repeat!!
+    # dans le terminal : tput cols (il y a aussi tput lines)
+    
+    {tput_cols, err} = System.cmd("tput", ["cols"])
+  #  if (err) ...
+
+    cols = (String.trim tput_cols) |> String.to_integer
+
+    field_width = "16"
+    format_header = String.duplicate(("~" <> field_width <> ".. s"), Enum.count(input) + 1)
+    headers = [""] ++ Enum.map input, fn el -> el[:name] end
+  
+    IO.puts(:io.format(format_header, headers))
   end
 end
