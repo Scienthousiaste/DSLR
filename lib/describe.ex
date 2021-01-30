@@ -95,20 +95,19 @@ defmodule Describe do
         {:max, Statistics.max data},
       ]
     end
-
   end
 
   def format_output(input) do
     # N'afficher que de quoi remplir la largeur du terminal, and repeat!!
-    # dans le terminal : tput cols (il y a aussi tput lines)
     
+    field_width = 16
     {tput_cols, err} = System.cmd("tput", ["cols"])
   #  if (err) ...
+    terminal_cols = (String.trim tput_cols) |> String.to_integer
+    columns_per_line = Float.floor(terminal_cols / field_width)
 
-    cols = (String.trim tput_cols) |> String.to_integer
-
-    field_width = "16"
-    format_header = String.duplicate(("~" <> field_width <> ".. s"), Enum.count(input) + 1)
+    format_header = String.duplicate(("~" <> Integer.to_string(field_width)
+      <> ".. s"), Enum.count(input) + 1)
     headers = [""] ++ Enum.map input, fn el -> el[:name] end
   
     IO.puts(:io.format(format_header, headers))
